@@ -59,14 +59,11 @@ class MyTraceParser:
                 new_time = event_time_found.group(1)
 
                 if new_node_id != last_node_id:
-                    dist = int(new_node_id) - int(last_node_id)
-#                    print new_node_id,'-',last_node_id,dist
-                    if dist > 0:
-                        if not burst_times.has_key(last_node_id):
-                            burst_times[last_node_id] = []
+                    if not burst_times.has_key(last_node_id):
+                        burst_times[last_node_id] = []
 
-                        burst_times[last_node_id].append((last_time, new_time))
-#                        print last_node_id, new_time,'-',last_time,float(new_time)-float(last_time)
+                    burst_times[last_node_id].append((last_time, new_time))
+
                     last_node_id = new_node_id
                     last_time = new_time
             

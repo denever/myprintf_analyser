@@ -31,8 +31,9 @@ find_ss_sending = re.compile("^MacSS::send - Sending -")
 find_ss_ulmap = re.compile("^MacSS::recvUL_MAP - UL_MAP: ")
 find_bs_ulmap = re.compile("^MacBS::sendUL_MAP - UL_MAP: ")
 find_frame_start = re.compile("^MacBS::FrameHandler -")
+find_ulsubframe_start = re.compile("^MacBS::HandlerUL -")
 find_sstxof_handler = re.compile("^MacSS::ToHandler -")
-find_ulsubframe_start = re.compile("^MacSS::HandlerUL -")
+
 
 get_node_id = re.compile("NodeId: (\d+),")
 get_event_time = re.compile("Time: ([0-9.]*)")
@@ -124,13 +125,14 @@ class MyTraceParser:
         return frame_start_times
 
     def get_ulsubframe_start_times(self):
-        ulsbuframe_start_times = []
+        ulsubframe_start_times = []
         for line in self.input_lines:
             ulsubframe_start_found = find_ulsubframe_start.search(line)
             if ulsubframe_start_found:
+                print line
                 time_found = get_event_time.search(line)
                 if time_found:
-                    ulsubframe_start_time.append(time_found.group(1))
+                    ulsubframe_start_times.append(time_found.group(1))
         return ulsubframe_start_times
 
     def get_ss_txoff_times(self):

@@ -27,11 +27,12 @@
 import re
 import sys
 
-
 find_ss_sending = re.compile("^MacSS::send - Sending -")
 find_ss_ulmap = re.compile("^MacSS::recvUL_MAP - UL_MAP: ")
 find_bs_ulmap = re.compile("^MacBS::sendUL_MAP - UL_MAP: ")
 find_frame_start = re.compile("^MacBS::FrameHandler -")
+find_sstxof_handler = re.compile("^MacSS::ToHandler -")
+find_ulsubframe_start = re.compile("^MacSS::HandlerUL -")
 
 get_node_id = re.compile("NodeId: (\d+),")
 get_event_time = re.compile("Time: ([0-9.]*)")
@@ -112,12 +113,37 @@ class MyTraceParser:
                 
         return ulmap
 
-    def get_frame_start_time(self):
+    def get_frame_start_times(self):
         frame_start_times = []
         for line in self.input_lines:
             frame_start_found = find_frame_start.search(line)
             if frame_start_found:
                 time_found = get_event_time.search(line)
                 if time_found:
-                    frame_start_time.append(time_found.group(1))
+                    frame_start_times.append(time_found.group(1))
         return frame_start_times
+
+    def get_subframe_start_times(self):
+        ulsbuframe_start_times = []
+        for line in self.input_lines:
+            ulsubframe_start_found = find_ulsubframe_start.search(line)
+            if ulsubframe_start_found:
+                time_found = get_event_time.search(line)
+                if time_found:
+                    ulsubframe_start_time.append(time_found.group(1))
+        return ulsubframe_start_times
+
+    def get_txoff_times(self):
+        txoff_times = {}
+        for line in self.input_lines:
+            txoff_handler_found = find_sstxof_handler.search(line)
+            node_id_found = get_node_id.search(line)
+            event_time_found = get_event_time.search(line)
+
+            if txoff_handler_found and node_id_found and event_time_found:
+                node_id = node_id_found.group(1)
+                if not txoff_times.has_key(node_id):
+                    txoff_times[node_id] = []
+                    
+                txoff_times[node_id].append(event_time_found.group(1))
+        return txoff_times

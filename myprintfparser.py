@@ -129,7 +129,6 @@ class MyTraceParser:
         for line in self.input_lines:
             ulsubframe_start_found = find_ulsubframe_start.search(line)
             if ulsubframe_start_found:
-                print line
                 time_found = get_event_time.search(line)
                 if time_found:
                     ulsubframe_start_times.append(time_found.group(1))

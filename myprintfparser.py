@@ -123,7 +123,7 @@ class MyTraceParser:
                     frame_start_times.append(time_found.group(1))
         return frame_start_times
 
-    def get_subframe_start_times(self):
+    def get_ulsubframe_start_times(self):
         ulsbuframe_start_times = []
         for line in self.input_lines:
             ulsubframe_start_found = find_ulsubframe_start.search(line)
@@ -133,7 +133,7 @@ class MyTraceParser:
                     ulsubframe_start_time.append(time_found.group(1))
         return ulsubframe_start_times
 
-    def get_txoff_times(self):
+    def get_ss_txoff_times(self):
         txoff_times = {}
         for line in self.input_lines:
             txoff_handler_found = find_sstxof_handler.search(line)

@@ -25,39 +25,38 @@
 ###########################################################################
 
 import sys
-from myparser import MyTraceParser
+from myprintfparser import MyTraceParser
+from decimal import * # using decimal for decimal precision
 
 if __name__ == '__main__':
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 2:
         input_file = open(sys.argv[1], 'r') # apre il file in read
-        input_file2 = open(sys.argv[2], 'r')
     else:
         print "usage tracana.py input_file"
         sys.exit(1)
     
     parser = MyTraceParser(input_file)
 
-#    (start_bursts, stop_bursts) = parser.get_sent_bursts_per_node()
-#    burst_duration = {}
-#    
-#    for nodeid in start_bursts.keys():
-#        for i in range(len(start_bursts[nodeid])):
-#            duration = float(stop_bursts[nodeid][i]) - float(start_bursts[nodeid][i])
-#            print "Node id:", nodeid, "Start:", start_bursts[nodeid][i], "Duration:", round(duration, 6)
+    ul_map = parser.get_ss_ulmap() # This gets UpLink Map from file in MyPrintf format
+    bursts = parser.get_sent_bursts() # This gets bursts (start,stop) of trasmission from a file in MyPrintf format
+    ulsubframe_start_times = parser.get_ulsubframe_start_times() # This gets start times of UpLink Sub Frame
 
-#    parser2 = MyTraceParser(input_file2)
+    nodes = bursts.keys()
+    nodes_map = ul_map.keys()
+    nodes_map.sort()
+    nodes.sort()
 
-#    ul_map = parser2.get_ulmap()
-    
-#    for nodeid in ul_map.keys():
-#        for (start_time, duration) in ul_map[nodeid]:
-#            print "Node id:", nodeid, "Start:", start_time, "Duration:", duration
-    
-    bursts = parser.get_sent_bursts()
+    # This compares UpLink Map and transmission burts for each UpLink Subframe    
+    for frameno, frame_start in enumerate(ulsubframe_start_times):
+        print "UpLink SubFrame number:",frameno, "Start:",frame_start
+        for nodeid in nodes_map:
+            if nodeid != '0':
+                (start, duration) = bursts[nodeid][frameno]
+                (ul_start, ul_duration) = ul_map[nodeid][frameno]
 
-    for nodeid in bursts.keys():
-        if nodeid != '0':
-            for (start, stop) in bursts[nodeid]:
-                duration = float(stop) - float(start)
-                print "Node id:", nodeid, "Start:", start, "Stop:", stop, "Duration:", round(duration, 6)
-#            print "Node id:", nodeid, "Duration:", duration
+                insubframe_start = Decimal(start) - Decimal(frame_start)
+                
+                if insubframe_start != Decimal(ul_start):
+                    print "Node id:", nodeid, "In SubFrame start:",insubframe_start, "Ul_start:", ul_start
+                if duration != Decimal(ul_duration):
+                    print "Node id:", nodeid, "Duration:",duration, "Ul_Duration:", ul_duration

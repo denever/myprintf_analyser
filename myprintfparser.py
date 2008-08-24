@@ -26,6 +26,7 @@
 
 import re
 import sys
+from decimal import *
 
 find_ss_sending = re.compile("^MacSS::send - Sending -")
 find_ss_ulmap = re.compile("^MacSS::recvUL_MAP - UL_MAP: ")
@@ -33,18 +34,20 @@ find_bs_ulmap = re.compile("^MacBS::sendUL_MAP - UL_MAP: ")
 find_frame_start = re.compile("^MacBS::FrameHandler -")
 find_ulsubframe_start = re.compile("^MacBS::HandlerUL -")
 find_sstxof_handler = re.compile("^MacSS::ToHandler -")
-
+find_sswait_handler = re.compile("^MacSS::SsWaitHandler -")
+find_sphandler = re.compile("^MacSS::SPHandler -")
 
 get_node_id = re.compile("NodeId: (\d+),")
 get_event_time = re.compile("Time: ([0-9.]*)")
 get_start_time = re.compile("start: ([0-9.]*)",)
-get_duration = re.compile("duration: ([0-9.]*)")
+get_duration = re.compile("Duration: ([0-9.]*)")
+get_shortpreamble = re.compile("ShortPreamble: ([0-9.]*)")
 
 class MyTraceParser:
     def __init__(self, input_file):
         self.input_lines = input_file.readlines()
     
-    def get_sent_bursts(self):
+    def old_get_sent_bursts(self):
         last_node_id = str(0)
         last_time = str(0)        
         burst_times = {}
@@ -69,6 +72,61 @@ class MyTraceParser:
             
         return burst_times
 
+    def get_sent_bursts(self):
+        current_node_id = 'NoNode'
+        current_time = Decimal('0.000000')
+        short_preamble = Decimal('0.000000')
+        total_duration = Decimal('0.000000')
+        burst_times = {}
+        
+        for line in self.input_lines:
+            ss_sending_found = find_ss_sending.search(line)
+            sswait_handler_found = find_sswait_handler.search(line)
+            sphandler_found = find_sphandler.search(line)
+            
+            node_id_found = get_node_id.search(line)
+            event_time_found = get_event_time.search(line)
+            duration_found = get_duration.search(line)
+            shortpreamble_found = get_shortpreamble.search(line)
+            
+            if sswait_handler_found and node_id_found and event_time_found:
+                new_node_id = node_id_found.group(1)
+
+                if current_node_id == 'NoNode':
+                    current_node_id = new_node_id
+                    current_node_id = new_node_id
+                    current_time = Decimal(event_time_found.group(1))
+                    continue
+                
+                if new_node_id != current_node_id:
+                    if not burst_times.has_key(current_node_id):
+                        burst_times[current_node_id] = []
+
+                    burst_times[current_node_id].append((current_time,total_duration))
+
+                    current_node_id = new_node_id
+                    current_time = Decimal(event_time_found.group(1))
+                continue
+
+            if sphandler_found and node_id_found and shortpreamble_found:
+                if node_id_found.group(1) == current_node_id:
+                    short_preamble = Decimal(shortpreamble_found.group(1))
+                    total_duration = short_preamble
+                continue
+            
+            if ss_sending_found and node_id_found and event_time_found and duration_found:
+                new_node_id = node_id_found.group(1)
+                new_time = event_time_found.group(1)
+                duration = Decimal(duration_found.group(1))
+
+                if new_node_id == current_node_id:
+                    total_duration = total_duration + duration
+
+                continue
+            
+        return burst_times
+
+    
     def get_ss_ulmap(self):
         ulmap = {}
         

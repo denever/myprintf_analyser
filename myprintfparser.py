@@ -42,6 +42,7 @@ get_event_time = re.compile("Time: ([0-9.]*)")
 get_start_time = re.compile("start: ([0-9.]*)",)
 get_duration = re.compile("Duration: ([0-9.]*)")
 get_shortpreamble = re.compile("ShortPreamble: ([0-9.]*)")
+get_pkt_id = re.compile("PktId: ([0-9.]*),")
 
 class MyTraceParser:
     def __init__(self, input_file):
@@ -202,3 +203,41 @@ class MyTraceParser:
                     
                 txoff_times[node_id].append(event_time_found.group(1))
         return txoff_times
+
+    def get_sent_pkts(self):
+        current_node_id = 'NoNode'
+        pkts = {}
+        current_pkts = []
+        
+        for line in self.input_lines:
+            sswait_handler_found = find_sswait_handler.search(line)
+            ss_sending_found = find_ss_sending.search(line)
+            
+            node_id_found = get_node_id.search(line)
+
+            if sswait_handler_found and node_id_found:
+                new_node_id = node_id_found.group(1)
+
+                if current_node_id == 'NoNode':
+                    current_node_id = new_node_id
+                    continue
+
+                if new_node_id != current_node_id:
+                    if not pkts.has_key(current_node_id):
+                        pkts[current_node_id] = []
+                        
+                    pkts[current_node_id].append(current_pkts)
+                    current_pkts = []
+                    current_node_id = new_node_id
+                continue
+
+            if ss_sending_found and node_id_found:
+                new_node_id = node_id_found.group(1)
+                pkt_id_found = get_pkt_id.search(line)
+            
+                if pkt_id_found and new_node_id == current_node_id:
+                    pkt_id = pkt_id_found.group(1)
+                    current_pkts.append(pkt_id)
+                continue
+            
+        return pkts

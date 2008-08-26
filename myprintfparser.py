@@ -94,7 +94,6 @@ class MyTraceParser:
 
                 if current_node_id == 'NoNode':
                     current_node_id = new_node_id
-                    current_node_id = new_node_id
                     current_time = Decimal(event_time_found.group(1))
                     continue
                 

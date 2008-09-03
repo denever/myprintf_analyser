@@ -42,7 +42,7 @@ if __name__ == '__main__':
     bursts = parser.get_sent_bursts() # This gets bursts (start,stop) of trasmission from a file in MyPrintf format    
 #    This prints trasmission bursts ordered in UpLink Subframes
     for frameno, frame_start in enumerate(ulsubframe_start_times):
-        print "UpLink SubFrame number:",frameno
+        print "UpLink SubFrame number",frameno,'starting at',frame_start
         nodes = pkts.keys()
         nodes.sort()
         for nodeid in nodes:
